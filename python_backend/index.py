@@ -139,7 +139,8 @@ def main():
         "segundo_actual": tiempo["segundo"]
     }
     with open('../clock_data.json', 'w') as f:
-        json.dump(data, f, indent=2)
+        json.dump(data, f)
+    print("Archivo clock_data.json creado inicialmente")
 
     print("Reloj analógico iniciado. Las manecillas se moverán cada segundo.")
     print(f"Hora inicial: {tiempo['hora']}:{tiempo['minuto']}:{tiempo['segundo']}")
@@ -201,7 +202,7 @@ def main():
             "segundo_actual": tiempo["segundo"]
         }
         with open('../clock_data.json', 'w') as f:
-            json.dump(data, f, indent=2)
+            json.dump(data, f)
 
         time.sleep(1)
 

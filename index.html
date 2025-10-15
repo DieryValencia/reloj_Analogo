@@ -102,5 +102,38 @@
         </div>
     </div>
     <script src="script.js"></script>
+    <script>
+        // Mostrar instrucciones de uso
+        window.addEventListener('load', function() {
+            setTimeout(() => {
+                const statusMsg = document.createElement('div');
+                statusMsg.id = 'status-message';
+                statusMsg.style.cssText = `
+                    position: fixed;
+                    top: 10px;
+                    right: 10px;
+                    background: #f8f9fa;
+                    border: 1px solid #dee2e6;
+                    border-radius: 5px;
+                    padding: 10px;
+                    font-size: 12px;
+                    z-index: 1000;
+                    max-width: 300px;
+                `;
+                statusMsg.innerHTML = `
+                    <strong>Modo actual:</strong> <span id="mode-status">Local (Sin servidor)</span><br>
+                    <strong>Funcionalidades disponibles:</strong><br>
+                    • Manecillas que se mueven<br>
+                    • Ajuste manual de hora<br>
+                    • Alarmas locales<br>
+                    • Sincronización con hora real
+                `;
+                document.body.appendChild(statusMsg);
+
+                // El modo es siempre local ahora
+                document.getElementById('mode-status').style.color = 'blue';
+            }, 2000);
+        });
+    </script>
 </body>
 </html>

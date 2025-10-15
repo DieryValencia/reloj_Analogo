@@ -23,12 +23,14 @@ def start_http_server():
             super().end_headers()
 
         def do_GET(self):
-            if self.path == '/clock_data.json':
+            if self.path.startswith('/clock_data.json'):
                 try:
                     with open('clock_data.json', 'r') as f:
                         content = f.read()
                     self.send_response(200)
                     self.send_header('Content-type', 'application/json')
+                    self.send_header('Cache-Control', 'no-cache')
+                    self.send_header('Access-Control-Allow-Origin', '*')
                     self.end_headers()
                     self.wfile.write(content.encode('utf-8'))
                 except FileNotFoundError:
@@ -44,6 +46,8 @@ def start_http_server():
                     }
                     self.send_response(200)
                     self.send_header('Content-type', 'application/json')
+                    self.send_header('Cache-Control', 'no-cache')
+                    self.send_header('Access-Control-Allow-Origin', '*')
                     self.end_headers()
                     self.wfile.write(json.dumps(default_data).encode('utf-8'))
             else:
