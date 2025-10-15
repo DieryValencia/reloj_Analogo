@@ -71,47 +71,50 @@ function drawHand(angle, length, width, color) {
     ctx.stroke();
 }
 
-async function updateClock() {
-    try {
-        const response = await fetch('clock_data.json');
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data = await response.json();
+function updateClock() {
+    // Intentar cargar desde el servidor HTTP primero
+    fetch('http://localhost:8000/clock_data.json')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            // Verificar que los datos sean válidos
+            if (data && typeof data.hora === 'number' && typeof data.minuto === 'number' && typeof data.segundo === 'number') {
+                // Dibujar el reloj con los ángulos calculados
+                drawClock(data.hora, data.minuto, data.segundo, data.alarma);
 
-        // Verificar que los datos sean válidos
-        if (data && typeof data.hora === 'number' && typeof data.minuto === 'number' && typeof data.segundo === 'number') {
-            // Dibujar el reloj con los ángulos calculados
-            drawClock(data.hora, data.minuto, data.segundo, data.alarma);
+                // Actualizar display de tiempo usando los datos del backend
+                const hora = data.hora_actual || 0;
+                const minuto = data.minuto_actual || 0;
+                const segundo = data.segundo_actual || 0;
 
-            // Actualizar display de tiempo usando los datos del backend
-            const hora = data.hora_actual || 0;
-            const minuto = data.minuto_actual || 0;
-            const segundo = data.segundo_actual || 0;
+                // Formato 12 horas con AM/PM
+                const period = hora >= 12 ? 'PM' : 'AM';
+                const hora12 = hora % 12 || 12; // Convertir 0 a 12 para formato 12h
+                const timeString = `${hora12.toString().padStart(2, '0')}:${minuto.toString().padStart(2, '0')}:${segundo.toString().padStart(2, '0')} ${period}`;
+                document.getElementById('time-display').textContent = timeString;
 
-            // Formato 12 horas con AM/PM
-            const period = hora >= 12 ? 'PM' : 'AM';
-            const hora12 = hora % 12 || 12; // Convertir 0 a 12 para formato 12h
-            const timeString = `${hora12.toString().padStart(2, '0')}:${minuto.toString().padStart(2, '0')}:${segundo.toString().padStart(2, '0')} ${period}`;
-            document.getElementById('time-display').textContent = timeString;
-
-            // Debug: mostrar ángulos en consola
-            console.log(`Ángulos - Hora: ${data.hora.toFixed(1)}°, Minuto: ${data.minuto.toFixed(1)}°, Segundo: ${data.segundo.toFixed(1)}°`);
-        } else {
-            console.warn('Datos del reloj inválidos:', data);
-            // Dibujar reloj con valores por defecto en caso de datos inválidos
-            drawClock(0, 0, 0, false);
-        }
-    } catch (error) {
-        console.error('Error al cargar datos del reloj:', error);
-        // Dibujar reloj con valores por defecto en caso de error
-        drawClock(0, 0, 0, false);
-        document.getElementById('time-display').textContent = '00:00:00 AM';
-    }
+                // Debug: mostrar ángulos en consola
+                console.log(`Tiempo: ${hora}:${minuto}:${segundo} - Ángulos: H:${data.hora.toFixed(1)}° M:${data.minuto.toFixed(1)}° S:${data.segundo.toFixed(1)}°`);
+            } else {
+                console.warn('Datos del reloj inválidos:', data);
+                // Dibujar reloj con valores por defecto en caso de datos inválidos
+                drawClock(0, 0, 0, false);
+            }
+        })
+        .catch(error => {
+            console.error('Error al cargar datos del reloj desde servidor:', error);
+            // Simular movimiento del reloj con JavaScript como último recurso
+            console.log('Usando modo simulado - reloj se moverá con JavaScript');
+            simulateClock();
+        });
 }
 
 // Función para establecer la alarma
-async function setAlarm() {
+function setAlarm() {
     const hourInput = document.getElementById('alarm-hour');
     const minuteInput = document.getElementById('alarm-minute');
     const hour = parseInt(hourInput.value);
@@ -122,16 +125,15 @@ async function setAlarm() {
         return;
     }
 
-    try {
-        const response = await fetch('/set_alarm', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ hora: hour, minuto: minute })
-        });
-
-        const result = await response.json();
+    fetch('http://localhost:8000/set_alarm', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ hora: hour, minuto: minute })
+    })
+    .then(response => response.json())
+    .then(result => {
         if (result.status === 'success') {
             alert('Alarma establecida correctamente.');
             hourInput.value = '';
@@ -139,14 +141,15 @@ async function setAlarm() {
         } else {
             alert('Error al establecer la alarma: ' + result.message);
         }
-    } catch (error) {
+    })
+    .catch(error => {
         console.error('Error al enviar la solicitud:', error);
         alert('Error al conectar con el servidor.');
-    }
+    });
 }
 
 // Función para ajustar la hora
-async function setTime() {
+function setTime() {
     const hourInput = document.getElementById('set-hour');
     const minuteInput = document.getElementById('set-minute');
     const secondInput = document.getElementById('set-second');
@@ -160,16 +163,15 @@ async function setTime() {
         return;
     }
 
-    try {
-        const response = await fetch('/set_time', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ hora: hour, minuto: minute, segundo: second })
-        });
-
-        const result = await response.json();
+    fetch('http://localhost:8000/set_time', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ hora: hour, minuto: minute, segundo: second })
+    })
+    .then(response => response.json())
+    .then(result => {
         if (result.status === 'success') {
             alert('Hora ajustada correctamente.');
             hourInput.value = '';
@@ -178,37 +180,39 @@ async function setTime() {
         } else {
             alert('Error al ajustar la hora: ' + result.message);
         }
-    } catch (error) {
+    })
+    .catch(error => {
         console.error('Error al enviar la solicitud:', error);
         alert('Error al conectar con el servidor.');
-    }
+    });
 }
 
 // Función para sincronizar con la hora real
-async function syncTime() {
-    try {
-        const response = await fetch('/sync_time', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ sync: true })
-        });
-
+function syncTime() {
+    fetch('http://localhost:8000/sync_time', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ sync: true })
+    })
+    .then(response => {
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
-
-        const result = await response.json();
+        return response.json();
+    })
+    .then(result => {
         if (result.status === 'success') {
             alert('Reloj sincronizado con la hora real.');
         } else {
             alert('Error al sincronizar el reloj: ' + result.message);
         }
-    } catch (error) {
+    })
+    .catch(error => {
         console.error('Error al enviar la solicitud:', error);
         alert('Error al conectar con el servidor.');
-    }
+    });
 }
 
 // Agregar event listeners a los botones
@@ -221,3 +225,30 @@ setInterval(updateClock, 1000);
 
 // Cargar inicialmente
 updateClock();
+
+// Función para simular el movimiento del reloj cuando no hay backend
+function simulateClock() {
+    const now = new Date();
+    const hora = now.getHours();
+    const minuto = now.getMinutes();
+    const segundo = now.getSeconds();
+
+    // Calcular ángulos
+    const anguloSegundo = (360 / 60) * segundo;
+    const anguloMinuto = (360 / 60) * minuto + (360 / 60) * (segundo / 60);
+    const anguloHora = (360 / 12) * (hora % 12) + (360 / 12) * (minuto / 60);
+
+    // Dibujar reloj
+    drawClock(anguloHora, anguloMinuto, anguloSegundo, false);
+
+    // Actualizar display de tiempo
+    const period = hora >= 12 ? 'PM' : 'AM';
+    const hora12 = hora % 12 || 12;
+    const timeString = `${hora12.toString().padStart(2, '0')}:${minuto.toString().padStart(2, '0')}:${segundo.toString().padStart(2, '0')} ${period}`;
+    document.getElementById('time-display').textContent = timeString;
+
+    console.log(`Modo simulado - Tiempo: ${hora}:${minuto}:${segundo} - Ángulos: H:${anguloHora.toFixed(1)}° M:${anguloMinuto.toFixed(1)}° S:${anguloSegundo.toFixed(1)}°`);
+}
+
+// Debug: mostrar que el script se cargó
+console.log('Reloj analógico cargado. Intentando conectar con servidor...');

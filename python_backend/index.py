@@ -141,13 +141,10 @@ def main():
     with open('../clock_data.json', 'w') as f:
         json.dump(data, f, indent=2)
 
-    # Mostrar progreso cada 10 segundos
-    if reloj.segundos.get_valor() % 10 == 0:
-        print(f"Tiempo actual: {tiempo['hora']}:{tiempo['minuto']}:{tiempo['segundo']} - Ángulos: H:{angulos['hora']:.1f}° M:{angulos['minuto']:.1f}° S:{angulos['segundo']:.1f}°")
-
-    print("Reloj analógico iniciado. Esperando actualizaciones...")
+    print("Reloj analógico iniciado. Las manecillas se moverán cada segundo.")
     print(f"Hora inicial: {tiempo['hora']}:{tiempo['minuto']}:{tiempo['segundo']}")
     print(f"Ángulos iniciales - Hora: {angulos['hora']:.1f}°, Minuto: {angulos['minuto']:.1f}°, Segundo: {angulos['segundo']:.1f}°")
+    print("Archivo clock_data.json creado. Presiona Ctrl+C para detener...")
 
     while True:
         # Verificar si hay una nueva alarma configurada
