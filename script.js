@@ -7,6 +7,9 @@ const radius = 180;
 // Variables para modo local
 let customTime = null;
 let alarmTime = null;
+let alarmsList = [];
+let audioContext = null;
+let isAlarmPlaying = false;
 
 function drawClock(hourAngle, minuteAngle, secondAngle, alarm) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -78,49 +81,45 @@ function drawHand(angle, length, width, color) {
 let backendAvailable = false;
 
 function updateClock() {
-    // Intentar cargar desde el servidor HTTP primero
-    fetch('http://localhost:8000/clock_data.json?' + Date.now()) // Agregar timestamp para evitar cache
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            backendAvailable = true;
-            return response.json();
-        })
-        .then(data => {
-            // Verificar que los datos sean válidos
-            if (data && typeof data.hora === 'number' && typeof data.minuto === 'number' && typeof data.segundo === 'number') {
-                // Dibujar el reloj con los ángulos calculados
-                drawClock(data.hora, data.minuto, data.segundo, data.alarma);
+    // Modo completamente local - no intentar conectar con servidor
+    simulateClock();
+}
 
-                // Actualizar display de tiempo usando los datos del backend
-                const hora = data.hora_actual || 0;
-                const minuto = data.minuto_actual || 0;
-                const segundo = data.segundo_actual || 0;
+// Función para actualizar la lista de alarmas en la UI
+function updateAlarmsList() {
+    const alarmsListElement = document.getElementById('alarms-list');
+    alarmsListElement.innerHTML = '';
 
-                // Formato 12 horas con AM/PM
-                const period = hora >= 12 ? 'PM' : 'AM';
-                const hora12 = hora % 12 || 12; // Convertir 0 a 12 para formato 12h
-                const timeString = `${hora12.toString().padStart(2, '0')}:${minuto.toString().padStart(2, '0')}:${segundo.toString().padStart(2, '0')} ${period}`;
-                document.getElementById('time-display').textContent = timeString;
+    alarmsList.forEach((alarm, index) => {
+        const li = document.createElement('li');
+        const timeString = `${alarm.hora.toString().padStart(2, '0')}:${alarm.minuto.toString().padStart(2, '0')}`;
+        li.innerHTML = `
+            <span>Alarma: ${timeString}</span>
+            <button onclick="deleteAlarm(${index})">Eliminar</button>
+        `;
+        alarmsListElement.appendChild(li);
+    });
+}
 
-                // Debug: mostrar ángulos en consola
-                console.log(`Backend activo - Tiempo: ${hora}:${minuto}:${segundo} - Ángulos: H:${data.hora.toFixed(1)}° M:${data.minuto.toFixed(1)}° S:${data.segundo.toFixed(1)}°`);
-            } else {
-                console.warn('Datos del reloj inválidos:', data);
-                // Dibujar reloj con valores por defecto en caso de datos inválidos
-                drawClock(0, 0, 0, false);
-            }
-        })
-        .catch(error => {
-            if (backendAvailable) {
-                console.error('Backend dejó de responder:', error);
-                backendAvailable = false;
-            }
-            // Simular movimiento del reloj con JavaScript como último recurso
-            console.log('Usando modo simulado - reloj se moverá con JavaScript');
-            simulateClock();
-        });
+// Función para eliminar una alarma
+function deleteAlarm(index) {
+    if (confirm('¿Estás seguro de que quieres eliminar esta alarma?')) {
+        alarmsList.splice(index, 1);
+        localStorage.setItem('alarmsList', JSON.stringify(alarmsList));
+
+        // Si eliminamos la alarma activa, desactivarla
+        if (alarmTime && alarmsList.length === 0) {
+            alarmTime = null;
+            localStorage.removeItem('alarmTime');
+        } else if (alarmsList.length > 0) {
+            // Establecer la primera alarma como activa
+            alarmTime = alarmsList[0];
+            localStorage.setItem('alarmTime', JSON.stringify(alarmTime));
+        }
+
+        updateAlarmsList();
+        console.log('Alarma eliminada');
+    }
 }
 
 // Función para establecer la alarma (modo local)
@@ -135,15 +134,25 @@ function setAlarm() {
         return;
     }
 
-    // Guardar alarma en localStorage
-    const alarmTime = { hora: hour, minuto: minute };
-    localStorage.setItem('alarmTime', JSON.stringify(alarmTime));
+    // Agregar alarma a la lista
+    const newAlarm = { hora: hour, minuto: minute };
+    alarmsList.push(newAlarm);
+
+    // Guardar lista completa en localStorage
+    localStorage.setItem('alarmsList', JSON.stringify(alarmsList));
+
+    // Establecer como alarma activa (la primera o la más próxima)
+    if (!alarmTime) {
+        alarmTime = newAlarm;
+        localStorage.setItem('alarmTime', JSON.stringify(alarmTime));
+    }
 
     alert(`Alarma establecida para las ${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`);
     hourInput.value = '';
     minuteInput.value = '';
 
-    console.log('Alarma guardada localmente:', alarmTime);
+    updateAlarmsList();
+    console.log('Alarma agregada:', newAlarm);
 }
 
 // Función para ajustar la hora (modo local)
@@ -231,15 +240,21 @@ function simulateClock() {
     const anguloMinuto = (360 / 60) * minuto + (360 / 60) * (segundo / 60);
     const anguloHora = (360 / 12) * (hora % 12) + (360 / 12) * (minuto / 60);
 
-    // Verificar alarma
+    // Verificar alarmas
     let alarmActive = false;
-    if (alarmTime && hora === alarmTime.hora && minuto === alarmTime.minuto) {
-        alarmActive = true;
-        // Mostrar alerta de alarma (solo una vez por minuto)
-        if (segundo === 0) {
-            alert(`¡ALARMA! Son las ${alarmTime.hora.toString().padStart(2, '0')}:${alarmTime.minuto.toString().padStart(2, '0')}`);
+    alarmsList.forEach(alarm => {
+        if (hora === alarm.hora && minuto === alarm.minuto) {
+            alarmActive = true;
+            // Mostrar alerta de alarma (solo una vez por minuto)
+            if (segundo === 0) {
+                playAlarmSound();
+                // Pequeño delay para que el sonido empiece antes de la alerta
+                setTimeout(() => {
+                    alert(`¡ALARMA! Son las ${alarm.hora.toString().padStart(2, '0')}:${alarm.minuto.toString().padStart(2, '0')}`);
+                }, 100);
+            }
         }
-    }
+    });
 
     // Dibujar reloj
     drawClock(anguloHora, anguloMinuto, anguloSegundo, alarmActive);
@@ -254,12 +269,75 @@ function simulateClock() {
     console.log(`Modo local (${modeText}) - Tiempo: ${hora}:${minuto}:${segundo} - Ángulos: H:${anguloHora.toFixed(1)}° M:${anguloMinuto.toFixed(1)}° S:${anguloSegundo.toFixed(1)}°`);
 }
 
+// Función para reproducir sonido de alarma
+function playAlarmSound() {
+    if (isAlarmPlaying) return; // Evitar múltiples sonidos simultáneos
+
+    try {
+        // Crear contexto de audio si no existe
+        if (!audioContext) {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+
+        // Reanudar contexto si está suspendido (requerido por algunos navegadores)
+        if (audioContext.state === 'suspended') {
+            audioContext.resume();
+        }
+
+        isAlarmPlaying = true;
+
+        // Crear oscilador para el sonido
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+
+        // Conectar nodos
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+
+        // Configurar sonido de alarma (patrón alternante)
+        const currentTime = audioContext.currentTime;
+
+        // Patrón de beep-beep-beep-pausa
+        for (let i = 0; i < 3; i++) {
+            const startTime = currentTime + i * 0.3;
+            const endTime = startTime + 0.2;
+
+            oscillator.frequency.setValueAtTime(1000, startTime); // Frecuencia alta
+            oscillator.frequency.setValueAtTime(800, startTime + 0.1); // Bajar frecuencia
+
+            gainNode.gain.setValueAtTime(0.3, startTime);
+            gainNode.gain.setValueAtTime(0, endTime);
+        }
+
+        oscillator.type = 'square'; // Tipo de onda
+
+        // Reproducir
+        oscillator.start(currentTime);
+        oscillator.stop(currentTime + 1.2); // Duración total
+
+        // Resetear flag después de que termine el sonido
+        setTimeout(() => {
+            isAlarmPlaying = false;
+        }, 1200);
+
+        console.log('Sonido de alarma reproducido');
+
+    } catch (error) {
+        console.error('Error reproduciendo sonido de alarma:', error);
+        isAlarmPlaying = false;
+    }
+}
+
 // Cargar configuraciones guardadas al iniciar
 function loadSavedSettings() {
-    const savedAlarm = localStorage.getItem('alarmTime');
-    if (savedAlarm) {
-        alarmTime = JSON.parse(savedAlarm);
-        console.log('Alarma cargada:', alarmTime);
+    const savedAlarms = localStorage.getItem('alarmsList');
+    if (savedAlarms) {
+        alarmsList = JSON.parse(savedAlarms);
+        // Establecer la primera alarma como activa
+        if (alarmsList.length > 0) {
+            alarmTime = alarmsList[0];
+        }
+        console.log('Alarmas cargadas:', alarmsList);
     }
 
     const savedTime = localStorage.getItem('customTime');
@@ -267,6 +345,8 @@ function loadSavedSettings() {
         customTime = JSON.parse(savedTime);
         console.log('Hora personalizada cargada:', customTime);
     }
+
+    updateAlarmsList();
 }
 
 // Debug: mostrar que el script se cargó
