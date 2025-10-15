@@ -14,23 +14,39 @@ let isAlarmPlaying = false;
 function drawClock(hourAngle, minuteAngle, secondAngle, alarm) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Dibujar círculo del reloj
+    // Dibujar círculo del reloj con gradiente
+    const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius);
+    gradient.addColorStop(0, '#00ff00');
+    gradient.addColorStop(0.7, '#00aa00');
+    gradient.addColorStop(1, '#004400');
+
     ctx.beginPath();
     ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
-    ctx.strokeStyle = '#333';
+    ctx.strokeStyle = gradient;
     ctx.lineWidth = 4;
+    ctx.shadowColor = '#00ff00';
+    ctx.shadowBlur = 15;
     ctx.stroke();
+    ctx.shadowBlur = 0; // Reset shadow
 
-    // Dibujar números
+    // Dibujar números con efecto neon verde pulsante
     ctx.font = '20px Arial';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#00ff00';
+    ctx.shadowColor = '#00ff00';
+    ctx.shadowBlur = 8;
     for (let i = 1; i <= 12; i++) {
         const angle = (i * 30 - 90) * Math.PI / 180;
         const x = centerX + Math.cos(angle) * (radius - 30);
         const y = centerY + Math.sin(angle) * (radius - 30);
+        // Efecto de brillo variable
+        const brightness = 0.8 + 0.2 * Math.sin(Date.now() * 0.005 + i);
+        ctx.globalAlpha = brightness;
         ctx.fillText(i.toString(), x, y);
+        ctx.globalAlpha = 1;
     }
+    ctx.shadowBlur = 0; // Reset shadow
 
     // Dibujar marcas de minutos
     for (let i = 0; i < 60; i++) {
@@ -44,14 +60,17 @@ function drawClock(hourAngle, minuteAngle, secondAngle, alarm) {
         ctx.beginPath();
         ctx.moveTo(x1, y1);
         ctx.lineTo(x2, y2);
-        ctx.strokeStyle = '#666';
+        ctx.strokeStyle = '#00ff00';
         ctx.lineWidth = 1;
+        ctx.shadowColor = '#00ff00';
+        ctx.shadowBlur = 3;
         ctx.stroke();
     }
+    ctx.shadowBlur = 0; // Reset shadow
 
     // Dibujar manecillas
-    drawHand(hourAngle, radius * 0.5, 8, '#333');
-    drawHand(minuteAngle, radius * 0.7, 6, '#333');
+    drawHand(hourAngle, radius * 0.5, 8, '#00ff00');
+    drawHand(minuteAngle, radius * 0.7, 6, '#00ff00');
     drawHand(secondAngle, radius * 0.9, 2, '#ff0000');
 
     // Mostrar alarma si está activa
@@ -70,12 +89,21 @@ function drawHand(angle, length, width, color) {
     const x = centerX + Math.cos(radian) * length;
     const y = centerY + Math.sin(radian) * length;
 
+    // Crear gradiente para la manecilla
+    const handGradient = ctx.createLinearGradient(centerX, centerY, x, y);
+    handGradient.addColorStop(0, color);
+    handGradient.addColorStop(0.5, '#ffffff');
+    handGradient.addColorStop(1, color);
+
     ctx.beginPath();
     ctx.moveTo(centerX, centerY);
     ctx.lineTo(x, y);
-    ctx.strokeStyle = color;
+    ctx.strokeStyle = handGradient;
     ctx.lineWidth = width;
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 8;
     ctx.stroke();
+    ctx.shadowBlur = 0; // Reset shadow
 }
 
 let backendAvailable = false;
@@ -348,6 +376,13 @@ function loadSavedSettings() {
 
     updateAlarmsList();
 }
+
+// Inicializar audio context al primer clic del usuario
+document.addEventListener('click', function initAudioOnFirstClick() {
+    initAudioContext();
+    document.removeEventListener('click', initAudioOnFirstClick);
+    console.log('Audio inicializado con interacción del usuario');
+});
 
 // Debug: mostrar que el script se cargó
 console.log('Reloj analógico cargado completamente en modo local.');
