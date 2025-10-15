@@ -100,7 +100,8 @@ class RelojAnalogico:
         minuto = self.minutos.get_valor()
         segundo = self.segundos.get_valor()
 
-        # Ángulos: 360 grados / max_valor * valor
+        # Ángulos correctos para reloj analógico (0 grados = 12 en punto)
+        # Los ángulos van de 0 a 360 grados en sentido horario
         angulo_segundo = (360 / 60) * segundo
         angulo_minuto = (360 / 60) * minuto + (360 / 60) * (segundo / 60)
         angulo_hora = (360 / 12) * hora + (360 / 12) * (minuto / 60)
@@ -140,12 +141,21 @@ def main():
     with open('../clock_data.json', 'w') as f:
         json.dump(data, f, indent=2)
 
+    # Mostrar progreso cada 10 segundos
+    if reloj.segundos.get_valor() % 10 == 0:
+        print(f"Tiempo actual: {tiempo['hora']}:{tiempo['minuto']}:{tiempo['segundo']} - Ángulos: H:{angulos['hora']:.1f}° M:{angulos['minuto']:.1f}° S:{angulos['segundo']:.1f}°")
+
+    print("Reloj analógico iniciado. Esperando actualizaciones...")
+    print(f"Hora inicial: {tiempo['hora']}:{tiempo['minuto']}:{tiempo['segundo']}")
+    print(f"Ángulos iniciales - Hora: {angulos['hora']:.1f}°, Minuto: {angulos['minuto']:.1f}°, Segundo: {angulos['segundo']:.1f}°")
+
     while True:
         # Verificar si hay una nueva alarma configurada
         try:
             with open('../set_alarm.json', 'r') as f:
                 alarm_data = json.load(f)
                 reloj.set_alarma(alarm_data['hora'], alarm_data['minuto'])
+                print(f"Alarma configurada para {alarm_data['hora']}:{alarm_data['minuto']}")
                 # Eliminar el archivo después de leerlo para evitar reconfiguraciones repetidas
                 os.remove('../set_alarm.json')
         except FileNotFoundError:
@@ -158,6 +168,7 @@ def main():
                 # Convertir hora de 24h a 12h para el reloj analógico
                 hora_12h = time_data['hora'] % 12
                 reloj.modificar_tiempo_completo(hora_12h, time_data['minuto'], time_data['segundo'])
+                print(f"Hora ajustada a {time_data['hora']}:{time_data['minuto']}:{time_data['segundo']}")
                 # Eliminar el archivo después de leerlo
                 os.remove('../set_time.json')
         except FileNotFoundError:
@@ -169,6 +180,7 @@ def main():
                 sync_data = json.load(f)
                 if sync_data.get('sync'):
                     reloj.sincronizar_con_hora_real()
+                    print("Reloj sincronizado con hora real")
                 # Eliminar el archivo después de leerlo
                 os.remove('../sync_time.json')
         except FileNotFoundError:
