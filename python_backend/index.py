@@ -62,10 +62,23 @@ class RelojAnalogico:
         self.minutos.set_valor(ahora.minute)
         self.segundos.set_valor(ahora.second)
 
+    def sincronizar_con_hora_real(self):
+        """Sincroniza el reloj con la hora real del sistema"""
+        ahora = datetime.datetime.now()
+        self.horas.set_valor(ahora.hour % 12)
+        self.minutos.set_valor(ahora.minute)
+        self.segundos.set_valor(ahora.second)
+
     def modificar_hora(self, hora, minuto):
         if 0 <= hora < 12 and 0 <= minuto < 60:
             self.horas.set_valor(hora)
             self.minutos.set_valor(minuto)
+
+    def modificar_tiempo_completo(self, hora, minuto, segundo):
+        if 0 <= hora < 12 and 0 <= minuto < 60 and 0 <= segundo < 60:
+            self.horas.set_valor(hora)
+            self.minutos.set_valor(minuto)
+            self.segundos.set_valor(segundo)
 
     def set_alarma(self, hora, minuto):
         if 0 <= hora < 24 and 0 <= minuto < 60:
@@ -137,6 +150,29 @@ def main():
                 os.remove('../set_alarm.json')
         except FileNotFoundError:
             pass  # No hay nueva alarma
+
+        # Verificar si hay un ajuste de tiempo
+        try:
+            with open('../set_time.json', 'r') as f:
+                time_data = json.load(f)
+                # Convertir hora de 24h a 12h para el reloj analógico
+                hora_12h = time_data['hora'] % 12
+                reloj.modificar_tiempo_completo(hora_12h, time_data['minuto'], time_data['segundo'])
+                # Eliminar el archivo después de leerlo
+                os.remove('../set_time.json')
+        except FileNotFoundError:
+            pass  # No hay ajuste de tiempo
+
+        # Verificar si hay solicitud de sincronización con hora real
+        try:
+            with open('../sync_time.json', 'r') as f:
+                sync_data = json.load(f)
+                if sync_data.get('sync'):
+                    reloj.sincronizar_con_hora_real()
+                # Eliminar el archivo después de leerlo
+                os.remove('../sync_time.json')
+        except FileNotFoundError:
+            pass  # No hay solicitud de sincronización
 
         reloj.segundos.avanzar(1)
         if reloj.segundos.get_valor() == 0:

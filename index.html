@@ -51,6 +51,31 @@
         .alarm-setup button:hover {
             background-color: #555;
         }
+        .time-setup {
+            margin-top: 20px;
+        }
+        .time-setup input {
+            width: 60px;
+            margin: 0 5px;
+            padding: 5px;
+            text-align: center;
+        }
+        .time-setup button {
+            padding: 5px 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .time-setup button:hover {
+            background-color: #0056b3;
+        }
+        .time-setup button:last-child {
+            background-color: #28a745;
+        }
+        .time-setup button:last-child:hover {
+            background-color: #218838;
+        }
     </style>
 </head>
 <body>
@@ -64,6 +89,16 @@
             <label for="alarm-minute">Minuto de alarma:</label>
             <input type="number" id="alarm-minute" min="0" max="59" placeholder="MM">
             <button id="set-alarm-btn">Establecer Alarma</button>
+        </div>
+        <div class="time-setup">
+            <label for="set-hour">Ajustar Hora:</label>
+            <input type="number" id="set-hour" min="0" max="23" placeholder="HH">
+            <label for="set-minute">Minuto:</label>
+            <input type="number" id="set-minute" min="0" max="59" placeholder="MM">
+            <label for="set-second">Segundo:</label>
+            <input type="number" id="set-second" min="0" max="59" placeholder="SS">
+            <button id="set-time-btn">Ajustar Hora</button>
+            <button id="sync-time-btn">Sincronizar con Hora Real</button>
         </div>
     </div>
     <script src="script.js"></script>

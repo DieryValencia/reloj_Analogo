@@ -75,6 +75,40 @@ def start_http_server():
                     self.send_header('Content-type', 'application/json')
                     self.end_headers()
                     self.wfile.write(json.dumps({'status': 'error', 'message': 'Invalid JSON'}).encode('utf-8'))
+            elif self.path == '/set_time':
+                content_length = int(self.headers['Content-Length'])
+                post_data = self.rfile.read(content_length)
+                try:
+                    time_data = json.loads(post_data.decode('utf-8'))
+                    hora = time_data.get('hora')
+                    minuto = time_data.get('minuto')
+                    segundo = time_data.get('segundo')
+                    if (isinstance(hora, int) and isinstance(minuto, int) and isinstance(segundo, int) and
+                        0 <= hora < 24 and 0 <= minuto < 60 and 0 <= segundo < 60):
+                        with open('set_time.json', 'w') as f:
+                            json.dump({'hora': hora, 'minuto': minuto, 'segundo': segundo}, f)
+                        self.send_response(200)
+                        self.send_header('Content-type', 'application/json')
+                        self.end_headers()
+                        self.wfile.write(json.dumps({'status': 'success'}).encode('utf-8'))
+                    else:
+                        self.send_response(400)
+                        self.send_header('Content-type', 'application/json')
+                        self.end_headers()
+                        self.wfile.write(json.dumps({'status': 'error', 'message': 'Invalid time values'}).encode('utf-8'))
+                except json.JSONDecodeError:
+                    self.send_response(400)
+                    self.send_header('Content-type', 'application/json')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({'status': 'error', 'message': 'Invalid JSON'}).encode('utf-8'))
+            elif self.path == '/sync_time':
+                # Crear archivo para sincronizar con hora real
+                with open('sync_time.json', 'w') as f:
+                    json.dump({'sync': True}, f)
+                self.send_response(200)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({'status': 'success'}).encode('utf-8'))
             else:
                 self.send_response(404)
                 self.end_headers()
