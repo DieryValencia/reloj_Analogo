@@ -3,148 +3,148 @@ import time
 import datetime
 import os
 
-class Nodo:
-    def __init__(self, dato):
-        self.dato = dato
-        self.siguiente = None
-        self.anterior = None
+class Node:
+    def __init__(self, data):
+        self.data = data
+        self.next = None
+        self.previous = None
 
-class ListaCircularDoble:
-    def __init__(self, max_valor):
-        self.max_valor = max_valor
-        self.cabeza = None
-        self.actual = None
-        self._inicializar()
+class CircularDoublyLinkedList:
+    def __init__(self, max_value):
+        self.max_value = max_value
+        self.head = None
+        self.current = None
+        self._initialize()
 
-    def _inicializar(self):
-        if self.max_valor <= 0:
+    def _initialize(self):
+        if self.max_value <= 0:
             return
-        primero = Nodo(0)
-        self.cabeza = primero
-        self.actual = primero
-        actual = primero
-        for i in range(1, self.max_valor):
-            nuevo = Nodo(i)
-            actual.siguiente = nuevo
-            nuevo.anterior = actual
-            actual = nuevo
-        actual.siguiente = primero
-        primero.anterior = actual
+        first = Node(0)
+        self.head = first
+        self.current = first
+        current = first
+        for i in range(1, self.max_value):
+            new_node = Node(i)
+            current.next = new_node
+            new_node.previous = current
+            current = new_node
+        current.next = first
+        first.previous = current
 
-    def avanzar(self, pasos=1):
-        for _ in range(pasos):
-            self.actual = self.actual.siguiente
+    def advance(self, steps=1):
+        for _ in range(steps):
+            self.current = self.current.next
 
-    def retroceder(self, pasos=1):
-        for _ in range(pasos):
-            self.actual = self.actual.anterior
+    def retreat(self, steps=1):
+        for _ in range(steps):
+            self.current = self.current.previous
 
-    def set_valor(self, valor):
-        if 0 <= valor < self.max_valor:
-            self.actual = self.cabeza
-            self.avanzar(valor)
+    def set_value(self, value):
+        if 0 <= value < self.max_value:
+            self.current = self.head
+            self.advance(value)
 
-    def get_valor(self):
-        return self.actual.dato
+    def get_value(self):
+        return self.current.data
 
-class RelojAnalogico:
+class AnalogClock:
     def __init__(self):
-        self.horas = ListaCircularDoble(12)
-        self.minutos = ListaCircularDoble(60)
-        self.segundos = ListaCircularDoble(60)
-        self.alarma_hora = None
-        self.alarma_minuto = None
-        self.alarma_activa = False
+        self.hours = CircularDoublyLinkedList(12)
+        self.minutes = CircularDoublyLinkedList(60)
+        self.seconds = CircularDoublyLinkedList(60)
+        self.alarm_hour = None
+        self.alarm_minute = None
+        self.alarm_active = False
 
-    def obtener_hora_actual(self):
-        ahora = datetime.datetime.now()
-        self.horas.set_valor(ahora.hour % 12)
-        self.minutos.set_valor(ahora.minute)
-        self.segundos.set_valor(ahora.second)
+    def get_current_time(self):
+        now = datetime.datetime.now()
+        self.hours.set_value(now.hour % 12)
+        self.minutes.set_value(now.minute)
+        self.seconds.set_value(now.second)
 
-    def sincronizar_con_hora_real(self):
+    def sync_with_real_time(self):
         """Sincroniza el reloj con la hora real del sistema"""
-        ahora = datetime.datetime.now()
-        self.horas.set_valor(ahora.hour % 12)
-        self.minutos.set_valor(ahora.minute)
-        self.segundos.set_valor(ahora.second)
+        now = datetime.datetime.now()
+        self.hours.set_value(now.hour % 12)
+        self.minutes.set_value(now.minute)
+        self.seconds.set_value(now.second)
 
-    def modificar_hora(self, hora, minuto):
-        if 0 <= hora < 12 and 0 <= minuto < 60:
-            self.horas.set_valor(hora)
-            self.minutos.set_valor(minuto)
+    def modify_time(self, hour, minute):
+        if 0 <= hour < 12 and 0 <= minute < 60:
+            self.hours.set_value(hour)
+            self.minutes.set_value(minute)
 
-    def modificar_tiempo_completo(self, hora, minuto, segundo):
-        if 0 <= hora < 12 and 0 <= minuto < 60 and 0 <= segundo < 60:
-            self.horas.set_valor(hora)
-            self.minutos.set_valor(minuto)
-            self.segundos.set_valor(segundo)
+    def modify_full_time(self, hour, minute, second):
+        if 0 <= hour < 12 and 0 <= minute < 60 and 0 <= second < 60:
+            self.hours.set_value(hour)
+            self.minutes.set_value(minute)
+            self.seconds.set_value(second)
 
-    def set_alarma(self, hora, minuto):
-        if 0 <= hora < 24 and 0 <= minuto < 60:
-            self.alarma_hora = hora
-            self.alarma_minuto = minuto
-            self.alarma_activa = True
+    def set_alarm(self, hour, minute):
+        if 0 <= hour < 24 and 0 <= minute < 60:
+            self.alarm_hour = hour
+            self.alarm_minute = minute
+            self.alarm_active = True
 
-    def desactivar_alarma(self):
-        self.alarma_activa = False
+    def deactivate_alarm(self):
+        self.alarm_active = False
 
-    def verificar_alarma(self):
-        if not self.alarma_activa:
+    def check_alarm(self):
+        if not self.alarm_active:
             return False
-        ahora = datetime.datetime.now()
-        return ahora.hour == self.alarma_hora and ahora.minute == self.alarma_minuto
+        now = datetime.datetime.now()
+        return now.hour == self.alarm_hour and now.minute == self.alarm_minute
 
-    def get_angulos(self):
-        hora = self.horas.get_valor()
-        minuto = self.minutos.get_valor()
-        segundo = self.segundos.get_valor()
+    def get_angles(self):
+        hour = self.hours.get_value()
+        minute = self.minutes.get_value()
+        second = self.seconds.get_value()
 
         # Ángulos correctos para reloj analógico (0 grados = 12 en punto)
         # Los ángulos van de 0 a 360 grados en sentido horario
-        angulo_segundo = (360 / 60) * segundo
-        angulo_minuto = (360 / 60) * minuto + (360 / 60) * (segundo / 60)
-        angulo_hora = (360 / 12) * hora + (360 / 12) * (minuto / 60)
+        second_angle = (360 / 60) * second
+        minute_angle = (360 / 60) * minute + (360 / 60) * (second / 60)
+        hour_angle = (360 / 12) * hour + (360 / 12) * (minute / 60)
 
         return {
-            "hora": angulo_hora,
-            "minuto": angulo_minuto,
-            "segundo": angulo_segundo,
-            "alarma": self.verificar_alarma()
+            "hour": hour_angle,
+            "minute": minute_angle,
+            "second": second_angle,
+            "alarm": self.check_alarm()
         }
 
-    def get_tiempo_actual(self):
+    def get_current_time_display(self):
         """Devuelve la hora actual en formato legible"""
-        ahora = datetime.datetime.now()
+        now = datetime.datetime.now()
         return {
-            "hora": ahora.hour,
-            "minuto": ahora.minute,
-            "segundo": ahora.second
+            "hour": now.hour,
+            "minute": now.minute,
+            "second": now.second
         }
 
 def main():
-    reloj = RelojAnalogico()
-    reloj.obtener_hora_actual()
+    clock = AnalogClock()
+    clock.get_current_time()
 
     # Crear el archivo clock_data.json inicialmente
-    angulos = reloj.get_angulos()
-    tiempo = reloj.get_tiempo_actual()
+    angles = clock.get_angles()
+    time_display = clock.get_current_time_display()
     data = {
-        "hora": angulos["hora"],
-        "minuto": angulos["minuto"],
-        "segundo": angulos["segundo"],
-        "alarma": angulos["alarma"],
-        "hora_actual": tiempo["hora"],
-        "minuto_actual": tiempo["minuto"],
-        "segundo_actual": tiempo["segundo"]
+        "hour": angles["hour"],
+        "minute": angles["minute"],
+        "second": angles["second"],
+        "alarm": angles["alarm"],
+        "current_hour": time_display["hour"],
+        "current_minute": time_display["minute"],
+        "current_second": time_display["second"]
     }
     with open('../clock_data.json', 'w') as f:
         json.dump(data, f)
     print("Archivo clock_data.json creado inicialmente")
 
     print("Reloj analógico iniciado. Las manecillas se moverán cada segundo.")
-    print(f"Hora inicial: {tiempo['hora']}:{tiempo['minuto']}:{tiempo['segundo']}")
-    print(f"Ángulos iniciales - Hora: {angulos['hora']:.1f}°, Minuto: {angulos['minuto']:.1f}°, Segundo: {angulos['segundo']:.1f}°")
+    print(f"Hora inicial: {time_display['hour']}:{time_display['minute']}:{time_display['second']}")
+    print(f"Ángulos iniciales - Hora: {angles['hour']:.1f}°, Minuto: {angles['minute']:.1f}°, Segundo: {angles['second']:.1f}°")
     print("Archivo clock_data.json creado. Presiona Ctrl+C para detener...")
 
     while True:
@@ -152,8 +152,8 @@ def main():
         try:
             with open('../set_alarm.json', 'r') as f:
                 alarm_data = json.load(f)
-                reloj.set_alarma(alarm_data['hora'], alarm_data['minuto'])
-                print(f"Alarma configurada para {alarm_data['hora']}:{alarm_data['minuto']}")
+                clock.set_alarm(alarm_data['hour'], alarm_data['minute'])
+                print(f"Alarma configurada para {alarm_data['hour']}:{alarm_data['minute']}")
                 # Eliminar el archivo después de leerlo para evitar reconfiguraciones repetidas
                 os.remove('../set_alarm.json')
         except FileNotFoundError:
@@ -164,9 +164,9 @@ def main():
             with open('../set_time.json', 'r') as f:
                 time_data = json.load(f)
                 # Convertir hora de 24h a 12h para el reloj analógico
-                hora_12h = time_data['hora'] % 12
-                reloj.modificar_tiempo_completo(hora_12h, time_data['minuto'], time_data['segundo'])
-                print(f"Hora ajustada a {time_data['hora']}:{time_data['minuto']}:{time_data['segundo']}")
+                hour_12h = time_data['hour'] % 12
+                clock.modify_full_time(hour_12h, time_data['minute'], time_data['second'])
+                print(f"Hora ajustada a {time_data['hour']}:{time_data['minute']}:{time_data['second']}")
                 # Eliminar el archivo después de leerlo
                 os.remove('../set_time.json')
         except FileNotFoundError:
@@ -177,29 +177,29 @@ def main():
             with open('../sync_time.json', 'r') as f:
                 sync_data = json.load(f)
                 if sync_data.get('sync'):
-                    reloj.sincronizar_con_hora_real()
+                    clock.sync_with_real_time()
                     print("Reloj sincronizado con hora real")
                 # Eliminar el archivo después de leerlo
                 os.remove('../sync_time.json')
         except FileNotFoundError:
             pass  # No hay solicitud de sincronización
 
-        reloj.segundos.avanzar(1)
-        if reloj.segundos.get_valor() == 0:
-            reloj.minutos.avanzar(1)
-            if reloj.minutos.get_valor() == 0:
-                reloj.horas.avanzar(1)
+        clock.seconds.advance(1)
+        if clock.seconds.get_value() == 0:
+            clock.minutes.advance(1)
+            if clock.minutes.get_value() == 0:
+                clock.hours.advance(1)
 
-        angulos = reloj.get_angulos()
-        tiempo = reloj.get_tiempo_actual()
+        angles = clock.get_angles()
+        time_display = clock.get_current_time_display()
         data = {
-            "hora": angulos["hora"],
-            "minuto": angulos["minuto"],
-            "segundo": angulos["segundo"],
-            "alarma": angulos["alarma"],
-            "hora_actual": tiempo["hora"],
-            "minuto_actual": tiempo["minuto"],
-            "segundo_actual": tiempo["segundo"]
+            "hour": angles["hour"],
+            "minute": angles["minute"],
+            "second": angles["second"],
+            "alarm": angles["alarm"],
+            "current_hour": time_display["hour"],
+            "current_minute": time_display["minute"],
+            "current_second": time_display["second"]
         }
         with open('../clock_data.json', 'w') as f:
             json.dump(data, f)

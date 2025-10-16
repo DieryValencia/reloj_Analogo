@@ -120,7 +120,7 @@ function updateAlarmsList() {
 
     alarmsList.forEach((alarm, index) => {
         const li = document.createElement('li');
-        const timeString = `${alarm.hora.toString().padStart(2, '0')}:${alarm.minuto.toString().padStart(2, '0')}`;
+        const timeString = `${alarm.hour.toString().padStart(2, '0')}:${alarm.minute.toString().padStart(2, '0')}`;
         li.innerHTML = `
             <span>Alarma: ${timeString}</span>
             <button onclick="deleteAlarm(${index})">Eliminar</button>
@@ -163,7 +163,7 @@ function setAlarm() {
     }
 
     // Agregar alarma a la lista
-    const newAlarm = { hora: hour, minuto: minute };
+    const newAlarm = { hour, minute };
     alarmsList.push(newAlarm);
 
     // Guardar lista completa en localStorage
@@ -199,7 +199,7 @@ function setTime() {
     }
 
     // Ajustar la hora del reloj simulado
-    customTime = { hora: hour, minuto: minute, segundo: second };
+    customTime = { hour, minute, second };
     localStorage.setItem('customTime', JSON.stringify(customTime));
 
     alert(`Hora ajustada a ${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}:${second.toString().padStart(2, '0')}`);
@@ -238,63 +238,63 @@ function simulateClock() {
     const now = new Date();
 
     // Usar hora personalizada si existe, sino usar hora del sistema
-    let hora, minuto, segundo;
+    let hour, minute, second;
     if (customTime) {
-        hora = customTime.hora;
-        minuto = customTime.minuto;
-        segundo = customTime.segundo;
+        hour = customTime.hour;
+        minute = customTime.minute;
+        second = customTime.second;
         // Incrementar segundos para simular el paso del tiempo
-        segundo++;
-        if (segundo >= 60) {
-            segundo = 0;
-            minuto++;
-            if (minuto >= 60) {
-                minuto = 0;
-                hora = (hora + 1) % 24;
+        second++;
+        if (second >= 60) {
+            second = 0;
+            minute++;
+            if (minute >= 60) {
+                minute = 0;
+                hour = (hour + 1) % 24;
             }
         }
         // Actualizar la hora personalizada
-        customTime.segundo = segundo;
-        customTime.minuto = minuto;
-        customTime.hora = hora;
+        customTime.second = second;
+        customTime.minute = minute;
+        customTime.hour = hour;
     } else {
-        hora = now.getHours();
-        minuto = now.getMinutes();
-        segundo = now.getSeconds();
+        hour = now.getHours();
+        minute = now.getMinutes();
+        second = now.getSeconds();
     }
 
     // Calcular ángulos
-    const anguloSegundo = (360 / 60) * segundo;
-    const anguloMinuto = (360 / 60) * minuto + (360 / 60) * (segundo / 60);
-    const anguloHora = (360 / 12) * (hora % 12) + (360 / 12) * (minuto / 60);
+    const secondAngle = (360 / 60) * second;
+    const minuteAngle = (360 / 60) * minute + (360 / 60) * (second / 60);
+    const hourAngle = (360 / 12) * (hour % 12) + (360 / 12) * (minute / 60);
 
     // Verificar alarmas
     let alarmActive = false;
     alarmsList.forEach(alarm => {
-        if (hora === alarm.hora && minuto === alarm.minuto) {
+        if (hour === alarm.hour && minute === alarm.minute) {
             alarmActive = true;
             // Mostrar alerta de alarma (solo una vez por minuto)
-            if (segundo === 0) {
+            if (second === 0) {
                 playAlarmSound();
                 // Pequeño delay para que el sonido empiece antes de la alerta
                 setTimeout(() => {
-                    alert(`¡ALARMA! Son las ${alarm.hora.toString().padStart(2, '0')}:${alarm.minuto.toString().padStart(2, '0')}`);
+                    alert(`¡ALARMA! Son las ${alarm.hour.toString().padStart(2, '0')}:${alarm.minute.toString().padStart(2, '0')}`);
                 }, 100);
             }
         }
     });
 
     // Dibujar reloj
-    drawClock(anguloHora, anguloMinuto, anguloSegundo, alarmActive);
+    drawClock(hourAngle, minuteAngle, secondAngle, alarmActive);
 
     // Actualizar display de tiempo
-    const period = hora >= 12 ? 'PM' : 'AM';
-    const hora12 = hora % 12 || 12;
-    const timeString = `${hora12.toString().padStart(2, '0')}:${minuto.toString().padStart(2, '0')}:${segundo.toString().padStart(2, '0')} ${period}`;
+    const period = hour >= 12 ? 'PM' : 'AM';
+    const hora12 = hour % 12 || 12;
+    const timeString = `${hora12.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}:${second.toString().padStart(2, '0')} ${period}`;
     document.getElementById('time-display').textContent = timeString;
 
     const modeText = customTime ? 'personalizada' : 'sistema';
-    console.log(`Modo local (${modeText}) - Tiempo: ${hora}:${minuto}:${segundo} - Ángulos: H:${anguloHora.toFixed(1)}° M:${anguloMinuto.toFixed(1)}° S:${anguloSegundo.toFixed(1)}°`);
+    console.log(`Modo local (${modeText}) - Tiempo: ${hour}:${minute}:${second} - Ángulos: H:${hourAngle.toFixed(1)}° M:${minuteAngle.toFixed(1)}° S:${secondAngle.toFixed(1)}°`);
 }
 
 // Función para reproducir sonido de alarma
